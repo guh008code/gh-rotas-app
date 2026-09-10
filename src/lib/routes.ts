@@ -1,5 +1,7 @@
-export type Leg = { address: string; seconds: number; meters: number };
-export type RouteResult = { legs: Leg[]; seconds: number; meters: number };
+export type Coordinate = [number, number]; // longitude, latitude (GeoJSON)
+export type RoutePoint = { address: string; label: string; coordinate: Coordinate };
+export type Leg = RoutePoint & { seconds: number; meters: number };
+export type RouteResult = { origin: RoutePoint; legs: Leg[]; seconds: number; meters: number; geometry: Coordinate[]; provider: 'openrouteservice' };
 export type SavedRoute = { id: string; origin: string; stops: string[]; date: string };
 export type Library = { favorites: SavedRoute[]; history: SavedRoute[] };
 export const storageKey = 'gh-rotas:library:v1';
@@ -12,18 +14,18 @@ export function validate(origin: string, stops: string[]) {
   if (new Set(all.map(value => value.toLocaleLowerCase('pt-BR'))).size !== all.length) return 'Informe endereços diferentes para cada parada.';
   return null;
 }
-export async function searchRoutes(origin: string, stops: string[]): Promise<RouteResult> {
-  if (!apiUrl) throw new Error('O cálculo de rotas ainda não foi configurado. Por enquanto, salve seus endereços nos favoritos.');
+export async function searchRoutes(origin: string, stops: string[], endpoint = apiUrl): Promise<RouteResult> {
+  if (!endpoint) throw new Error('O cálculo de rotas ainda não foi configurado. Por enquanto, salve seus endereços nos favoritos.');
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 30000);
+  const timer = setTimeout(() => controller.abort(), 65000);
   try {
-    const response = await fetch(`${apiUrl.replace(/\/$/, '')}/routes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ origin, stops }), signal: controller.signal });
+    const response = await fetch(`${endpoint.replace(/\/$/, '')}/routes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ origin, stops }), signal: controller.signal });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Não foi possível calcular a rota.');
-    if (!Array.isArray(data.legs) || data.legs.length !== stops.length || !Number.isFinite(data.seconds) || !Number.isFinite(data.meters) || !data.legs.every((leg: Leg) => typeof leg.address === 'string' && Number.isFinite(leg.seconds) && Number.isFinite(leg.meters))) throw new Error('O serviço retornou uma rota inválida.');
+    if (!validResult(data, stops.length)) throw new Error('O serviço retornou uma rota inválida.');
     return data;
   } catch (error) {
-    if (error instanceof Error && (error.name === 'AbortError' || error instanceof TypeError)) throw new Error('Verifique sua conexão e se o serviço de rotas está disponível.');
+    if (error instanceof Error && (error.name === 'AbortError' || error instanceof TypeError)) throw new Error('Não foi possível conectar ao serviço de rotas. No computador, execute npm run server e tente novamente.');
     throw error;
   } finally { clearTimeout(timer); }
 }
@@ -33,4 +35,11 @@ export function readLibrary(raw: string | null): Library {
   const valid = (items: unknown): items is SavedRoute[] => Array.isArray(items) && items.every(item => typeof item?.id === 'string' && typeof item.origin === 'string' && Array.isArray(item.stops) && item.stops.every((s: unknown) => typeof s === 'string') && typeof item.date === 'string');
   if (!valid(data.favorites) || !valid(data.history)) throw new Error('Dados locais inválidos.');
   return data;
+}
+
+export function validResult(data: any, stopCount: number): data is RouteResult {
+  const coordinate = (c: any) => Array.isArray(c) && c.length === 2 && Number.isFinite(c[0]) && Number.isFinite(c[1]) && Math.abs(c[0]) <= 180 && Math.abs(c[1]) <= 90;
+  const point = (p: any) => p && typeof p.address === 'string' && typeof p.label === 'string' && coordinate(p.coordinate);
+  const positive = (n: any) => Number.isFinite(n) && n >= 0;
+  return !!data && data.provider === 'openrouteservice' && point(data.origin) && Array.isArray(data.legs) && data.legs.length === stopCount && data.legs.every((leg: any) => point(leg) && positive(leg.seconds) && positive(leg.meters)) && positive(data.seconds) && positive(data.meters) && Array.isArray(data.geometry) && data.geometry.length >= 2 && data.geometry.every(coordinate);
 }
