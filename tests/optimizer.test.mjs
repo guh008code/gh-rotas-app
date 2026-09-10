@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { optimize } from '../server/optimizer.mjs';
+import { optimize } from '../src/lib/optimizer.js';
 import { validate, readLibrary } from '../src/lib/routes.ts';
 test('single destination', () => assert.deepEqual(optimize([[0, 12], [30, 0]]), { seconds: 12, order: [1] }));
 test('chooses global minimum instead of nearest neighbor', () => {

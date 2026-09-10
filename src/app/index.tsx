@@ -1,5 +1,4 @@
 import ActiveTrip from '@/components/active-trip';
-import { routesApiUrl } from '@/lib/api-config';
 import RouteMap from '@/components/route-map';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, BackHandler, Keyboard, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -64,7 +63,7 @@ export default function HomeScreen() {
     const error = validate(origin, stops); if (error) return setMessage(error);
     Keyboard.dismiss();
     setBusy(true); setMessage(''); setResult(null); setCompleted(0);
-    try { setResult(await searchRoutes(origin.trim(), stops.map(s => s.trim()), routesApiUrl)); }
+    try { setResult(await searchRoutes(origin.trim(), stops.map(s => s.trim()))); }
     catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível buscar as rotas.'); }
     finally { setBusy(false); }
   }

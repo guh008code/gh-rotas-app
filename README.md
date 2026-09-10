@@ -1,81 +1,77 @@
 # GH Rotas
 
-App Expo / React Native para Android, iOS e web, sem login. Planeja viagens com até 8 destinos, salva favoritos e histórico no aparelho e mostra um mapa interativo com a sequência das paradas.
+Aplicativo Expo / React Native para Android, iOS e web. Planeja viagens com até 8 destinos, sem login, e salva favoritos e histórico no aparelho.
 
-## Testar no emulador Android
+## Executar
 
-Requer Node 22.13+, Android Studio com um emulador criado e Expo Go compatível com SDK 57.
+Requer Node 22.13+ e Expo Go compatível com SDK 57.
 
-1. Execute todos os comandos na pasta que contém este README e o `package.json`.
-2. Instale as dependências: `npm install`.
-3. Crie uma conta e uma chave gratuita no [OpenRouteService / HeiGIT](https://account.heigit.org/).
-4. Abra `.env.local` (já preparado localmente; em um clone novo, copie `.env.example`). Preencha somente `ORS_API_KEY=sua_chave`. Não envie a chave ao GitHub nem use o prefixo `EXPO_PUBLIC_` para ela.
-5. Inicie o serviço de rotas em um terminal:
+1. Execute os comandos na pasta deste README e do `package.json`.
+2. Instale as dependências com `npm install`.
+3. Copie `.env.example` para `.env.local` se esse arquivo ainda não existir.
+4. Preencha `EXPO_PUBLIC_ORS_API_KEY` com a chave do [OpenRouteService / HeiGIT](https://account.heigit.org/).
+5. Execute:
 
 ```bash
-npm run server
+npm start
 ```
 
-6. Abra o emulador pelo Device Manager do Android Studio. Em outro terminal:
+Para abrir diretamente uma plataforma:
 
 ```bash
 npm run android
+npm run ios
+npm run web
 ```
 
-O app usa automaticamente `http://10.0.2.2:3001` para acessar o servidor do computador a partir do emulador padrão do Android Studio. Se você definiu `EXPO_PUBLIC_ROUTES_API_URL` anteriormente, remova/comente essa variável para usar o padrão. Reinicie o servidor após preencher a chave e o Expo após alterar o ambiente. `npx expo start` também funciona: a detecção do emulador acontece dentro do app. O servidor continua sendo um processo separado; mantenha `npm run server` aberto.
+No Android, abra antes o emulador no Device Manager do Android Studio. Celulares físicos podem abrir o projeto pelo QR code do Expo. A conexão de desenvolvimento com o Expo continua necessária no Expo Go; uma versão de produção instalada funciona sem o computador.
 
-### Roteiro de teste
+**Não há servidor próprio.** O aplicativo consulta `https://api.openrouteservice.org` diretamente usando Wi-Fi ou dados móveis. Não é necessário configurar porta 3001, IP do computador ou executar `npm run server`.
 
-- O mapa do Brasil deve carregar mesmo sem chave ORS (precisa de internet).
-- Informe partida e pelo menos um destino. Para o primeiro teste, use coordenadas de locais públicos de São Paulo, evitando depender da busca de endereços:
+Ao migrar da versão anterior, pare o Expo e inicie novamente para carregar `EXPO_PUBLIC_ORS_API_KEY`. A antiga variável `ORS_API_KEY` não é mais utilizada. Depois de alterar a chave, recarregue o app; versões instaladas precisam receber uma nova compilação ou atualização compatível.
+
+## Chave compartilhada
+
+Todos os usuários utilizam a mesma chave e consomem a mesma cota do OpenRouteService. Por decisão do projeto, a chave é incorporada ao aplicativo e pode ser extraída da versão distribuída. O prefixo `EXPO_PUBLIC_` indica exatamente isso: não há promessa de segredo dentro do app.
+
+O arquivo `.env.local` continua ignorado pelo Git. Não coloque o valor real em `.env.example`, em código-fonte ou no README. Confira as cotas no [painel](https://account.heigit.org/info/plans). Ao esgotar a cota, o aplicativo mostra uma mensagem e preserva os dados locais.
+
+Para uma futura compilação EAS, configure `EXPO_PUBLIC_ORS_API_KEY` no ambiente utilizado pelo build. O `.env.local` ignorado pelo Git não deve ser a única configuração de uma compilação remota. A preparação de publicação ainda inclui identificador Android, perfis EAS, política de privacidade e testes de uma versão instalada.
+
+## Roteiro de teste
+
+- O mapa de fundo deve carregar com internet mesmo sem a chave ORS.
+- Para testar o cálculo sem depender da busca textual, use estes locais públicos de São Paulo:
   - Partida: `-23.5505, -46.6333`
   - Destino 1: `-23.5614, -46.6559`
   - Destino 2: `-23.5874, -46.6576`
-- Toque em **Buscar Rotas**. Com chave válida, a rota aparece em roxo e as paradas são numeradas na ordem calculada.
-- Após calcular, o app abre uma tela dedicada à viagem: mapa, partida e destinos em sequência, sem o formulário e os menus de planejamento. A próxima parada fica destacada.
-- Use **Editar rota** (ou Voltar no Android) para retornar ao formulário com os endereços preservados. Uma nova busca reinicia a sequência de conclusões.
-- Confira os locais encontrados no mapa e na lista antes de abrir a navegação. O botão de navegar abre o aplicativo de mapas externo; a tela interna ainda não acompanha o GPS em tempo real.
-- Salve um favorito, reabra o app e reutilize os endereços.
-- Marque as paradas como concluídas; a última deve salvar a viagem no histórico.
-- Depois teste endereços completos com número, cidade e estado. A busca textual está limitada ao Brasil.
-- Para testar GPS, configure a localização simulada no painel de controles estendidos do emulador. Não há acompanhamento de posição em tempo real.
+- Toque em **Buscar Rotas**. O app abre a tela da viagem com o trajeto em roxo, partida e destinos numerados. A próxima parada fica destacada.
+- Use **Editar rota** ou Voltar no Android para retornar ao formulário com os endereços preservados. Uma nova busca reinicia as conclusões.
+- Teste favoritos e histórico. A última parada concluída registra a viagem no aparelho.
+- Teste também endereços completos, com número, cidade e estado. A busca textual está limitada ao Brasil; resultados ausentes, imprecisos ou ambíguos geram um aviso.
+- Para testar GPS no emulador, configure a localização simulada nos controles estendidos. A localização atualmente preenche a partida; não há acompanhamento em tempo real.
 
-Sem chave, o mapa de fundo e os favoritos funcionam; a busca mostra uma mensagem de configuração. Nenhuma rota fictícia é apresentada como real.
-
-## Web, iOS e celular físico
-
-`npm run web` e `npm run ios` usam `http://localhost:3001` por padrão. No navegador, `APP_ORIGIN` deve corresponder à origem exibida pelo Expo (padrão `http://localhost:8081`; ajuste se a porta mudar).
-
-Para celular físico, configure em `.env.local`:
-
-```dotenv
-EXPO_PUBLIC_ROUTES_API_URL=http://IP-LOCAL-DO-COMPUTADOR:3001
-HOST=0.0.0.0
-```
-
-Use a mesma rede Wi-Fi e libere a porta 3001 no firewall local se necessário. O mapa usa WebView/Leaflet no Android e iOS, e iframe/Leaflet na web; não exige Google Maps SDK nem chave Google. A validação em um emulador/aparelho nativo ainda deve ser realizada. A conexão com a API real e o desenho de rotas foram verificados com coordenadas públicas de São Paulo. O HTTP local é destinado ao desenvolvimento com Expo Go; builds distribuídas devem usar um servidor HTTPS.
+O botão de navegação abre o próximo destino no Google Maps; no iOS também há opção de Mapas da Apple. A tela interna mostra o trajeto planejado, sem instruções por voz ou recálculo automático.
 
 ## Como funciona
 
-1. O servidor converte os endereços em coordenadas com o geocodificador do OpenRouteService. Coordenadas digitadas/GPS dispensam essa consulta. Resultados ausentes, imprecisos ou ambíguos são recusados.
-2. Consulta a matriz de tempos do perfil `driving-car`.
-3. O algoritmo local encontra a sequência de menor soma de tempos nessa matriz, com origem fixa e última parada livre, sem retorno à origem.
-4. Consulta Directions para obter a geometria pelas ruas e os tempos/distâncias de cada trecho da sequência.
-5. O app exibe o trajeto e abre a próxima parada no Google Maps ou, no iOS, também no Mapas da Apple, usando as coordenadas encontradas.
+1. O app converte endereços em coordenadas pelo geocodificador do OpenRouteService. Coordenadas digitadas/GPS dispensam essa consulta.
+2. Obtém a matriz de tempos do perfil `driving-car`.
+3. Encontra no dispositivo a sequência de menor soma de tempos nessa matriz, com origem fixa e último destino livre, sem retorno à origem.
+4. Consulta Directions para obter o desenho pelas ruas e os totais por trecho.
+5. Exibe o resultado no mapa e mantém favoritos/histórico localmente.
 
-Estimativas não incluem trânsito ao vivo, tempo de atendimento, janelas de entrega ou restrições de caminhões. Os tempos de Directions podem variar ligeiramente dos da matriz; a ordem minimiza a matriz, não garante o menor tempo real da viagem. O navegador externo pode recalcular cada trecho.
+Cada busca usa até 9 consultas de geocodificação, 1 Matrix e 1 Directions. Não há consulta automática enquanto o usuário digita. A busca tem timeout e mostra falhas de conexão, chave inválida e cota esgotada.
 
-Cada busca consome até 9 consultas de geocodificação (uma por endereço), 1 Matrix e 1 Directions. As cotas são compartilhadas pela chave e devem ser conferidas no [painel](https://account.heigit.org/info/plans). Não há cobrança Google para calcular as rotas.
+Estimativas não incluem trânsito em tempo real, tempo de atendimento, janelas de entrega ou restrições de caminhões. Os tempos de Directions podem diferir ligeiramente dos da matriz; a ordem minimiza a matriz, não garante o menor tempo real. Directions precisa de `instructions: true` para incluir os totais por trecho em `properties.segments`.
 
-## Dados e mapa de fundo
+## Dados e mapa
 
-Favoritos e histórico ficam apenas no dispositivo via AsyncStorage. O servidor não persiste endereços, rotas ou chaves em logs. O OpenRouteService recebe os endereços/coordenadas para calcular. O OpenStreetMap recebe as solicitações das imagens do mapa; Leaflet é carregado pelo CDN unpkg. A navegação externa compartilha as coordenadas do trecho com o provedor escolhido.
+Favoritos e histórico são armazenados via AsyncStorage no dispositivo. A viagem em andamento não é restaurada ao fechar o app. Desinstalar ou limpar os dados pode apagar os registros.
 
-Atribuição do OpenStreetMap permanece visível. Os tiles públicos são usados somente sob demanda, com cache normal do navegador/WebView, sem downloads offline ou pré-carregamento em massa. O WebView identifica o aplicativo no User-Agent. Para distribuição e crescimento, escolha um provedor de tiles com capacidade apropriada e cumpra a [política de tiles do OSM](https://operations.osmfoundation.org/policies/tiles/). Não há garantia de disponibilidade do serviço público.
+O OpenRouteService recebe os endereços/coordenadas necessários para calcular. O OpenStreetMap recebe solicitações de imagens do mapa e o CDN unpkg fornece Leaflet. A navegação externa compartilha as coordenadas do trecho com o provedor escolhido.
 
-A viagem em andamento não é restaurada após fechar o app. Desinstalar o app ou limpar dados do navegador pode apagar favoritos/histórico.
-
-O servidor incluído é para desenvolvimento local. Antes de disponibilizá-lo na internet, configure HTTPS e controle de abuso/consumo da chave; CORS e o limite básico por IP não substituem essa proteção. Isso não exige login dos usuários.
+O mapa usa WebView/Leaflet no Android e iOS e iframe/Leaflet na web. Não exige chave do Google. A atribuição do OpenStreetMap permanece visível; os tiles são carregados sob demanda, sem downloads offline ou pré-carregamento em massa, usando o cache normal do navegador/WebView. O WebView identifica o aplicativo no User-Agent. Para distribuição e crescimento, respeite a [política de tiles do OSM](https://operations.osmfoundation.org/policies/tiles/) e escolha um provedor com capacidade apropriada; o serviço público não garante disponibilidade.
 
 ## Verificar
 
@@ -86,6 +82,6 @@ npx expo export --platform web
 npx expo export --platform android
 ```
 
-Os testes automatizados de integração usam respostas simuladas do provedor, identificadas como mocks no código. Também foi feita uma consulta manual com chave válida. A resposta real exige `instructions: true` em Directions para incluir os totais por trecho em `properties.segments`. Cobrem coordenadas, geocodificação, ordenação, geometria, cotas, chave inválida, locais inacessíveis e segurança do HTML do mapa.
+Os testes automatizados usam respostas simuladas e cobrem chamadas diretas HTTPS, falhas de rede, cota, chave ausente, endereços ambíguos, geometria, otimização e armazenamento. O teste manual com chave válida é separado; não registre a chave em logs.
 
-Referências: [Expo 57](https://docs.expo.dev/versions/v57.0.0/), [ORS Matrix](https://giscience.github.io/openrouteservice/api-reference/endpoints/matrix/), [ORS Directions](https://giscience.github.io/openrouteservice/api-reference/endpoints/directions/), [Leaflet](https://leafletjs.com/).
+Referências: [Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/), [Variáveis de ambiente](https://docs.expo.dev/guides/environment-variables/), [OpenRouteService](https://openrouteservice.org/), [Leaflet](https://leafletjs.com/).

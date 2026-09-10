@@ -1,3 +1,4 @@
+import { calculateRoute } from './openrouteservice.js';
 export type Coordinate = [number, number]; // longitude, latitude (GeoJSON)
 export type RoutePoint = { address: string; label: string; coordinate: Coordinate };
 export type Leg = RoutePoint & { seconds: number; meters: number };
@@ -5,7 +6,7 @@ export type RouteResult = { origin: RoutePoint; legs: Leg[]; seconds: number; me
 export type SavedRoute = { id: string; origin: string; stops: string[]; date: string };
 export type Library = { favorites: SavedRoute[]; history: SavedRoute[] };
 export const storageKey = 'gh-rotas:library:v1';
-export const apiUrl = process.env.EXPO_PUBLIC_ROUTES_API_URL;
+export const orsApiKey = process.env.EXPO_PUBLIC_ORS_API_KEY;
 export function validate(origin: string, stops: string[]) {
   const all = [origin, ...stops].map(value => value.trim());
   if (all.some(value => !value)) return 'Preencha a partida e todos os destinos ou remova as paradas vazias.';
@@ -14,21 +15,23 @@ export function validate(origin: string, stops: string[]) {
   if (new Set(all.map(value => value.toLocaleLowerCase('pt-BR'))).size !== all.length) return 'Informe endereços diferentes para cada parada.';
   return null;
 }
-export async function searchRoutes(origin: string, stops: string[], endpoint = apiUrl): Promise<RouteResult> {
-  if (!endpoint) throw new Error('O cálculo de rotas ainda não foi configurado. Por enquanto, salve seus endereços nos favoritos.');
+export async function searchRoutes(origin: string, stops: string[], apiKey = orsApiKey): Promise<RouteResult> {
+  const validation = validate(origin, stops);
+  if (validation) throw new Error(validation);
+  if (!apiKey?.trim()) throw new Error('A chave de mapas não foi configurada nesta versão do aplicativo.');
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 65000);
+  const timer = setTimeout(() => controller.abort(), 55000);
   try {
-    const response = await fetch(`${endpoint.replace(/\/$/, '')}/routes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ origin, stops }), signal: controller.signal });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Não foi possível calcular a rota.');
+    const data = await calculateRoute([origin.trim(), ...stops.map(stop => stop.trim())], { apiKey: apiKey.trim(), signal: controller.signal });
     if (!validResult(data, stops.length)) throw new Error('O serviço retornou uma rota inválida.');
     return data;
   } catch (error) {
-    if (error instanceof Error && (error.name === 'AbortError' || error instanceof TypeError)) throw new Error('Não foi possível conectar ao serviço de rotas. No computador, execute npm run server e tente novamente.');
+    if (controller.signal.aborted) throw new Error('A busca demorou demais. Verifique sua conexão e tente novamente.');
+    if (error instanceof TypeError) throw new Error('Não foi possível acessar os mapas. Verifique sua conexão Wi-Fi ou dados móveis e tente novamente.');
     throw error;
   } finally { clearTimeout(timer); }
 }
+
 export function readLibrary(raw: string | null): Library {
   if (!raw) return { favorites: [], history: [] };
   const data = JSON.parse(raw);

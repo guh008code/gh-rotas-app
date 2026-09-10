@@ -1,4 +1,4 @@
-import { optimize } from './optimizer.mjs';
+import { optimize } from './optimizer.js';
 
 export class RouteError extends Error {
   constructor(message, status = 502) { super(message); this.status = status; }
@@ -6,7 +6,7 @@ export class RouteError extends Error {
 const validCoordinate = point => Array.isArray(point) && point.length >= 2 && Number.isFinite(point[0]) && Number.isFinite(point[1]) && Math.abs(point[0]) <= 180 && Math.abs(point[1]) <= 90;
 const nonnegative = value => Number.isFinite(value) && value >= 0;
 
-export async function calculateRoute(addresses, { apiKey, fetchImpl = fetch, signal = AbortSignal.timeout(55000) }) {
+export async function calculateRoute(addresses, { apiKey, fetchImpl = fetch, signal }) {
   if (!apiKey) throw new RouteError('Configure a chave do OpenRouteService para calcular os trajetos. O mapa e os favoritos já estão disponíveis.', 503);
   async function request(path, body) {
     const response = await fetchImpl(`https://api.openrouteservice.org${path}`, {

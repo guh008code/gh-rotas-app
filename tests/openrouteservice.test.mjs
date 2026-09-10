@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateRoute } from '../server/openrouteservice.mjs';
+import { calculateRoute } from '../src/lib/openrouteservice.js';
 import { validResult } from '../src/lib/routes.ts';
 import { mapHtml } from '../src/lib/map-html.ts';
 
