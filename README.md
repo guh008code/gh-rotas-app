@@ -85,3 +85,9 @@ npx expo export --platform android
 Os testes automatizados usam respostas simuladas e cobrem chamadas diretas HTTPS, falhas de rede, cota, chave ausente, endereços ambíguos, geometria, otimização e armazenamento. O teste manual com chave válida é separado; não registre a chave em logs.
 
 Referências: [Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/), [Variáveis de ambiente](https://docs.expo.dev/guides/environment-variables/), [OpenRouteService](https://openrouteservice.org/), [Leaflet](https://leafletjs.com/).
+
+## Ícone e tela de abertura
+
+A arte fornecida pelo responsável está em `assets/images/gh-rotas-brand.png` e é compartilhada pelo ícone Android/iOS, favicon e tela nativa de abertura. A imagem original de 512 × 512 foi preservada sem cortes. A configuração está em `app.json`; as referências aos ícones Expo de demonstração foram substituídas nas configurações de publicação.
+
+Para conferir o ícone instalado e a abertura real, gere e instale uma nova compilação. O Expo Go e o recarregamento JavaScript não reproduzem integralmente essas alterações nativas. A arte contém um fundo claro e um padrão ao redor da marca; ambos fazem parte da imagem fornecida.
