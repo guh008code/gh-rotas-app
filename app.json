@@ -11,6 +11,7 @@
       "icon": "./assets/images/gh-rotas-brand.png"
     },
     "android": {
+      "package": "br.com.Ghrotas",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/gh-rotas-brand.png",
         "backgroundColor": "#E5E5E5"
@@ -36,6 +37,16 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Permita que o GH Rotas use sua localização como ponto de partida da viagem."
+        }
+      ],
+      "expo-image",
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true
+          }
         }
       ]
     ],

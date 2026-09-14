@@ -46,3 +46,7 @@ example
 .env
 .env.*
 !.env.example
+
+# Local signing and service account credentials
+/credentials.json
+/credentials/
